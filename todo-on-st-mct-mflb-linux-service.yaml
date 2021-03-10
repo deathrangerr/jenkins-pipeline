@@ -1,0 +1,46 @@
+node('st-mct-mflb') {
+    stage('git clone')
+    git credentialsId: 'anil-bitbucket', url: ' https://anilnewyork16@bitbucket.org/anilnewyork16/todorest21.git'
+    
+    stage('CheckAndStop'){
+        sh returnStatus: true, script: 'sudo kill -9 $(sudo lsof -t -i:8080)'
+        sh 'echo kill done'
+    }
+
+    stage('maven compile')
+    sh 'mvn compile'
+    
+    stage('sonar analysis')
+sh 'mvn sonar:sonar -Dsonar.projectKey=cloudenabled -Dsonar.host.url=http://172.20.105.57:9000 -Dsonar.login=9f7360036cea0c7fd1eeb319b9136f1001c3c1b3'
+    
+    
+    stage('junit tests')
+    sh 'mvn test'
+    
+    stage('maven surefire report')
+    sh 'mvn surefire-report:report'
+    
+    stage ('árchive reports fo junit')
+    sh 'zip -r site-anil.zip target/site*'
+    
+    stage('maven package')
+    sh 'mvn package'
+    
+    stage('upload to nexus')
+sh 'curl -v -u admin:CloudEnabled --upload-file site-anil.zip http://172.20.105.58:8081/repository/maven-releases/'
+    stage('check and stop')
+    sh returnStatus:true,script:'sudo kill -9 $(sudo lsof -t -i:8080)'
+    
+     stage('sleep 40 seconds')
+     sleep 40
+     
+    stage('deploy')
+    sh 'nohup java -jar target/todorest-0.0.1-SNAPSHOT.jar /tmp 2>> /dev/null >> /dev/null &'
+
+   stage('upload jar file on jenkins')
+archiveArtifacts 'target/todorest-0.0.1-SNAPSHOT.jar'
+ 
+stage('upload jar to nexus')
+sh 'curl -v -u admin:CloudEnabled --upload-file target/todorest-0.0.1-SNAPSHOT.jar http://172.20.105.58:8081/repository/maven-releases/'
+
+}
