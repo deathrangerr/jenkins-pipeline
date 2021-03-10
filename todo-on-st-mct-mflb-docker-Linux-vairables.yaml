@@ -1,0 +1,74 @@
+node('st-mct-mflb')  {
+    stage('variables')
+    {
+
+sh '''echo "BUILD_NUMBER" :: $BUILD_NUMBER
+echo "BUILD_ID" :: $BUILD_ID
+echo "BUILD_DISPLAY_NAME" :: $BUILD_DISPLAY_NAME
+echo "JOB_NAME" :: $JOB_NAME
+echo "JOB_BASE_NAME" :: $JOB_BASE_NAME
+echo "BUILD_TAG" :: $BUILD_TAG
+echo "EXECUTOR_NUMBER" :: $EXECUTOR_NUMBER
+echo "NODE_NAME" :: $NODE_NAME
+echo "NODE_LABELS" :: $NODE_LABELS
+echo "WORKSPACE" :: $WORKSPACE
+echo "JENKINS_HOME" :: $JENKINS_HOME
+echo "JENKINS_URL" :: $JENKINS_URL
+echo "BUILD_URL" ::$BUILD_URL
+echo "JOB_URL" :: $JOB_URL'''
+}
+
+
+node('st-mct-mflb') {
+    stage('git clone')
+    git credentialsId: 'anil-bitbucket', url: ' https://anilnewyork16@bitbucket.org/anilnewyork16/todorest21.git'
+
+// stage ('set mvn env var')
+//sh 'sudo mvn versions:set -DnewVersion=$BUILD_NUMBER'
+//sh 'sudo mvn versions:commit'
+
+    
+    stage('maven compile')
+    sh 'mvn compile'
+    
+    stage('sonar analysis')
+sh 'mvn sonar:sonar -Dsonar.projectKey=cloudenabled -Dsonar.host.url=http://172.20.105.57:9000 -Dsonar.login=9f7360036cea0c7fd1eeb319b9136f1001c3c1b3'
+    
+    
+    stage('junit tests')
+    sh 'mvn test'
+    
+    stage('maven surefire report')
+    sh 'mvn surefire-report:report'
+    
+    stage ('árchive reports fo junit')
+    sh 'zip -r site-anil.zip target/site*'
+    
+    stage('maven package')
+    sh 'mvn package'
+    
+    stage('upload to nexus')
+sh 'curl -v -u admin:CloudEnabled --upload-file site-anil.zip http://172.20.105.58:8081/repository/maven-releases/site-anil$BUILD_NUMBER.zip'
+
+   stage('upload jar file on jenkins')
+archiveArtifacts 'target/todorest-0.0.1-SNAPSHOT.jar'
+ 
+stage('upload jar to nexus')
+sh 'curl -v -u admin:CloudEnabled --upload-file target/todorest-0.0.1-SNAPSHOT.jar  http://172.20.105.58:8081/repository/maven-releases/todorest-$BUILD_NUMBER.jar'
+
+stage('build docker image')
+sh 'sudo docker build -t astar/todo:1.0 .'
+
+stage('deploy container')
+sh 'sudo docker run -itd -p 8080 astar/todo:1.0 /bin/bash'
+
+stage (' list the port details')
+sh 'sudo docker ps -l'
+
+stage ('save docker image')
+sh 'sudo docker save astar/todo:1.0 >> todo.tar'
+
+stage('upload docker image to nexus ')
+sh 'curl -v -u admin:CloudEnabled --upload-file todo.tar http://172.20.105.58:8081/repository/maven-releases/'
+}
+}
