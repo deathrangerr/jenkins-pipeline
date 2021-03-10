@@ -20,16 +20,15 @@ sh 'mvn sonar:sonar -Dsonar.projectKey=cloudenabled -Dsonar.host.url=http://172.
     stage('maven surefire report')
     sh 'mvn surefire-report:report'
     
-    stage ('Ã¡rchive reports fo junit')
+    stage (' rchive reports fo junit')
     sh 'zip -r site-anil.zip target/site*'
     
     stage('maven package')
     sh 'mvn package'
     
     stage('upload to nexus')
-sh 'curl -v -u admin:CloudEnabled --upload-file site-anil.zip http://172.20.105.58:8081/repository/maven-releases/'
-    stage('check and stop')
-    sh returnStatus:true,script:'sudo kill -9 $(sudo lsof -t -i:8080)'
+sh 'curl -v -u admin:CloudEnabled --upload-file site-anil.zip http://172.20.105.57:8081/repository/maven-releases/'
+   
     
      stage('sleep 40 seconds')
      sleep 40
@@ -41,6 +40,6 @@ sh 'curl -v -u admin:CloudEnabled --upload-file site-anil.zip http://172.20.105.
 archiveArtifacts 'target/todorest-0.0.1-SNAPSHOT.jar'
  
 stage('upload jar to nexus')
-sh 'curl -v -u admin:CloudEnabled --upload-file target/todorest-0.0.1-SNAPSHOT.jar http://172.20.105.58:8081/repository/maven-releases/'
+sh 'curl -v -u admin:CloudEnabled --upload-file target/todorest-0.0.1-SNAPSHOT.jar http://172.20.105.57:8081/repository/maven-releases/'
 
 }
