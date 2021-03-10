@@ -15,20 +15,20 @@ sh 'mvn sonar:sonar -Dsonar.projectKey=cloudenabled -Dsonar.host.url=http://172.
     stage('maven surefire report')
     sh 'mvn surefire-report:report'
     
-    stage ('Ã¡rchive reports fo junit')
+    stage (' rchive reports fo junit')
     sh 'zip -r site-anil.zip target/site*'
     
     stage('maven package')
     sh 'mvn package'
     
     stage('upload to nexus')
-sh 'curl -v -u admin:CloudEnabled --upload-file site-anil.zip http://172.20.105.58:8081/repository/maven-releases/'
+sh 'curl -v -u admin:CloudEnabled --upload-file site-anil.zip http://172.20.105.62:8081/repository/maven-releases/'
 
    stage('upload jar file on jenkins')
 archiveArtifacts 'target/todorest-0.0.1-SNAPSHOT.jar'
  
 stage('upload jar to nexus')
-sh 'curl -v -u admin:CloudEnabled --upload-file target/todorest-0.0.1-SNAPSHOT.jar http://172.20.105.58:8081/repository/maven-releases/'
+sh 'curl -v -u admin:CloudEnabled --upload-file target/todorest-0.0.1-SNAPSHOT.jar http://172.20.105.62:8081/repository/maven-releases/'
 
 stage('build docker image')
 sh 'sudo docker build -t astar/todo:1.0 .'
@@ -47,6 +47,6 @@ stage ('save docker image')
 sh 'sudo docker save astar/todo:1.0 >> todo.tar'
 
 stage('upload docker image to nexus ')
-sh 'curl -v -u admin:CloudEnabled --upload-file todo.tar http://172.20.105.58:8081/repository/maven-releases/'
+sh 'curl -v -u admin:CloudEnabled --upload-file todo.tar http://172.20.105.62:8081/repository/maven-releases/'
 
 }
