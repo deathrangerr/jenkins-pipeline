@@ -34,6 +34,6 @@ sh 'zip -r cu-anil.zip target*'
 
 
 stage('upload to nexus')
-sh 'curl -v -u admin:CloudEnabled --upload-file cu-anil.zip http://172.20.105.58:8081/repository/maven-releases/cu-anil$BUILD_NUMBER.zip'
+sh 'curl -v -u admin:CloudEnabled --upload-file cu-anil.zip http://172.20.105.62:8081/repository/maven-releases/cu-anil$BUILD_NUMBER.zip'
 }
 }
