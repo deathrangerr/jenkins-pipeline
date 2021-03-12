@@ -30,10 +30,10 @@ stage('install zip')
 sh 'sudo apt install zip -y'
 
 stage('zip the reports')
-sh 'zip -r cu-anil.zip target*'
+sh 'zip -r cu-anil2.zip target*'
 
 
 stage('upload to nexus')
-sh 'curl -v -u admin:CloudEnabled --upload-file cu-anil.zip http://172.20.105.58:8081/repository/maven-releases/cu-anil-var$BUILD_NUMBER.zip'
+sh 'curl -v -u admin:CloudEnabled --upload-file cu-anil2.zip http://172.20.105.62:8081/repository/maven-releases/cu-anil-var$BUILD_NUMBER.zip'
 }
 }
