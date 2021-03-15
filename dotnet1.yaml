@@ -1,0 +1,22 @@
+node('mfwb') {
+    stage('checkout')
+    git 'https://github.com/Kentico/kontent-sample-app-net.git'
+    
+    stage('publish')
+    bat 'dotnet publish'
+    
+    stage('adding permissions'){
+    powershell '''$folderLocation = "C:\\jenkins\\workspace\\dotnet-pipeline\\DancingGoat\\bin\\Debug\\net5.0\\publish"
+$users = @("IIS_IUSRS","IUSR")
+
+foreach ($user in $users) {
+    $folderACL = get-acl $folderLocation
+    $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule ("$user","Modify","ContainerInherit,ObjectInherit", "None", "Allow")
+    $folderACL.SetAccessRule($AccessRule)
+    $folderACL | Set-Acl $folderLocation
+}'''}
+    
+     
+    stage('deploy')
+    powershell 'C:\\Windows\\System32\\inetsrv\\appcmd.exe add site /name:contoso /id:2 /physicalPath:C:\\jenkins\\workspace\\dotnet-pipeline\\DancingGoat\\bin\\Debug\\net5.0\\publish /bindings:http/*:86:'
+}
