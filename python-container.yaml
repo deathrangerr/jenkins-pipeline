@@ -24,13 +24,13 @@ node('st-mct-mflb')  {
     git 'https://github.com/docker-training/webapp.git'
     
     stage ('build docker image')
-    sh 'sudo docker build -t astar/pythonmflb:1.0 .'
+    sh 'sudo docker build -t astar/pythonmflb:$BUILD_NUMBER .'
     
     stage (' delte old container')
     sh 'sudo docker rm -f python1'
     
     stage ('deploy app on 7001 host port')
-    sh 'sudo docker run --name python1 -p 7001:5000 -d astar/pythonmflb:1.0'
+    sh 'sudo docker run --name python1 -p 7001:5000 -d astar/pythonmflb:$BUILD_NUMBER'
      
     stage (' list the port number')
     sh ' sudo docker ps -l'
