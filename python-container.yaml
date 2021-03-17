@@ -1,0 +1,39 @@
+node('st-mct-mflb')  {
+    stage('variables')
+    {
+
+sh '''echo "BUILD_NUMBER" :: $BUILD_NUMBER
+echo "BUILD_ID" :: $BUILD_ID
+echo "BUILD_DISPLAY_NAME" :: $BUILD_DISPLAY_NAME
+echo "JOB_NAME" :: $JOB_NAME
+echo "JOB_BASE_NAME" :: $JOB_BASE_NAME
+echo "BUILD_TAG" :: $BUILD_TAG
+echo "EXECUTOR_NUMBER" :: $EXECUTOR_NUMBER
+echo "NODE_NAME" :: $NODE_NAME
+echo "NODE_LABELS" :: $NODE_LABELS
+echo "WORKSPACE" :: $WORKSPACE
+echo "JENKINS_HOME" :: $JENKINS_HOME
+echo "JENKINS_URL" :: $JENKINS_URL
+echo "BUILD_URL" ::$BUILD_URL
+echo "JOB_URL" :: $JOB_URL'''
+}
+
+
+node('st-mct-mflb')  {
+    stage('git clone')
+    git 'https://github.com/docker-training/webapp.git'
+    
+    stage ('build docker image')
+    sh 'sudo docker build -t astar/pythonmflb:1.0 .'
+    
+    stage (' delte old container')
+    sh 'sudo docker rm -f python1'
+    
+    stage ('deploy app on 7001 host port')
+    sh 'sudo docker run --name python1 -p 7001:5000 -d astar/pythonmflb:1.0'
+     
+    stage (' list the port number')
+    sh ' sudo docker ps -l'
+
+}
+
