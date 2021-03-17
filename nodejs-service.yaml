@@ -1,0 +1,16 @@
+
+node {
+    stage('git clone')
+    git 'https://github.com/contentful/the-example-app.nodejs.git'
+    
+    stage('CheckAndStop'){
+        sh returnStatus: true, script: 'sudo kill -9 $(sudo lsof -t -i:3000)'
+        sh 'echo kill done'
+    }
+    
+    stage ( 'npm install')
+    sh 'npm install'
+    
+    stage ('deploy nodejs app')
+    sh ' npm run start:dev'
+}
