@@ -1,0 +1,19 @@
+node {
+  stage('git') {
+    git 'https://deathrangerr@bitbucket.org/deathrangerr/todorest2.git'
+  }
+  
+  sh 'mvn clean'
+  stage('JIRA') {
+    jiraSendDeploymentInfo site: 'cloudenabled1.atlassian.net', environmentId: 'us-stg-1', environmentName: 'us-stg-1', environmentType: 'staging' , issueKeys: ['AAAV-1']
+    jiraSendBuildInfo branch: 'AAAV-1', site: 'cloudenabled1.atlassian.net'
+    }
+    //response = jiraNewIssue issue: testIssue, site: 'cloudenabled.atlassian.net'
+
+    echo response.successful.toString()
+    echo response.data.toString()
+    
+    stage('compile'){
+    sh 'mvn compile'
+  }
+}
