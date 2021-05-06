@@ -64,7 +64,7 @@ node('build-server') {
 //stage (' list the port details')
 //sh 'sudo docker ps -l'
   stage('docker login')
-  sh 'sudo docker login -u anilbidari -p Ferrari@88'
+  sh 'sudo docker login -u anilbidari -p $passwd'
   
  
   stage('upload image to dockerhub ')
