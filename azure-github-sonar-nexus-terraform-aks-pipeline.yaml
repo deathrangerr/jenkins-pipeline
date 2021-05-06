@@ -1,0 +1,106 @@
+
+node('build-server')  {
+    stage('variables')
+    {
+
+sh '''echo "BUILD_NUMBER" :: $BUILD_NUMBER
+echo "BUILD_ID" :: $BUILD_ID
+echo "BUILD_DISPLAY_NAME" :: $BUILD_DISPLAY_NAME
+echo "JOB_NAME" :: $JOB_NAME
+echo "JOB_BASE_NAME" :: $JOB_BASE_NAME
+echo "BUILD_TAG" :: $BUILD_TAG
+echo "EXECUTOR_NUMBER" :: $EXECUTOR_NUMBER
+echo "NODE_NAME" :: $NODE_NAME
+echo "NODE_LABELS" :: $NODE_LABELS
+echo "WORKSPACE" :: $WORKSPACE
+echo "JENKINS_HOME" :: $JENKINS_HOME
+echo "JENKINS_URL" :: $JENKINS_URL
+echo "BUILD_URL" ::$BUILD_URL
+echo "JOB_URL" :: $JOB_URL'''
+}
+
+
+node('build-server') {
+  stage ('install sw dependency') 
+  sh 'sudo apt install git maven zip -y' 
+  
+  stage ('clone the repo')
+  git 'https://github.com/anilbidari/todorestapril12.git'
+  
+
+  stage ('compile code')
+  sh 'sudo mvn compile'
+  
+   stage('sonar analysis')
+   sh 'sudo mvn sonar:sonar -Dsonar.projectKey=valuepoint -Dsonar.host.url=http://20.96.193.171:9000 -Dsonar.login=82768d075f98e9148898bf1fa769bef4ab6499f2'
+  
+  stage ('perform unit tests')
+  sh 'sudo mvn test'
+  
+  stage ('generate surefire-report') 
+  sh 'sudo mvn surefire-report:report'
+  
+  stage ('zip the reports') 
+  sh 'sudo zip -r site-anil$BUILD_NUMBER.zip target/site*'
+  
+  stage('upload to nexus')
+   sh 'sudo curl -v -u admin:admin123 --upload-file site-anil$BUILD_NUMBER.zip http://20.96.193.171:8081/repository/maven-releases/site-anil$BUILD_NUMBER.zip'
+  
+  stage ('create a package') 
+  sh 'sudo mvn package'
+  
+  stage ('archive jar file') 
+  archiveArtifacts artifacts: 'target/todorest-0.0.1-SNAPSHOT.jar', followSymlinks: false
+  
+  stage('upload jar to nexus')
+  sh 'curl -v -u admin:admin123 --upload-file target/todorest-0.0.1-SNAPSHOT.jar  http://20.96.193.171:8081/repository/maven-releases/todorest-$BUILD_NUMBER.jar'
+
+  stage('build docker image')
+  sh 'sudo docker build -t anilbidari/todo:$BUILD_NUMBER .'
+
+//stage('deploy container')
+//sh 'sudo docker run -itd -p 8080 astar/todo:1.0 /bin/bash'
+
+//stage (' list the port details')
+//sh 'sudo docker ps -l'
+  stage('docker login')
+  sh 'sudo docker login -u anilbidari -p Ferrari@88'
+  
+ 
+  stage('upload image to dockerhub ')
+  sh 'sudo docker push anilbidari/todo:$BUILD_NUMBER'
+  
+  stage ('connect terraofrm to azure cloud')
+  sh 'sudo sudo terraform init'
+  
+  stage ('deploy aks cluster')
+  sh 'sudo sudo terraform apply --auto-approve'
+  
+  stage('set azure subscription')
+  sh 'sudo az account set --subscription d663af74-a828-4938-a90e-109d8902734f'
+  
+  stage('get cluster credentials')
+  sh 'sudo az aks get-credentials --resource-group valuepoint-rg --name valuepoint-aks1'
+  
+  stage('deploy todoapp containers')
+  sh 'sudo kubectl create deployment todo-$BUILD_NUMBER --image=anilbidari/todo:$BUILD_NUMBER --port=8080'
+  
+  stage('deploy app behind load balancer')
+  sh 'sudo  kubectl expose deployment todo-$BUILD_NUMBER  --type="LoadBalancer"'
+  
+  stage ('scale app to min 3 and max 10')
+  sh 'sudo kubectl autoscale deployment todo-$BUILD_NUMBER --cpu-percent=50 --min=3 --max=10'
+  
+  stage ('get deployments')
+  sh 'sudo kubectl get deployment todo-$BUILD_NUMBER'
+  
+  stage ('sleep 1 min')
+  sleep 60
+  
+  stage ('get load-balancerip')
+  sh 'sudo kubectl get svc todo-$BUILD_NUMBER'
+  
+  
+}
+  
+}
