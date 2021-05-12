@@ -1,0 +1,74 @@
+node('build-server')  {
+    stage('variables')
+    {
+
+sh '''echo "BUILD_NUMBER" :: $BUILD_NUMBER
+echo "BUILD_ID" :: $BUILD_ID
+echo "BUILD_DISPLAY_NAME" :: $BUILD_DISPLAY_NAME
+echo "JOB_NAME" :: $JOB_NAME
+echo "JOB_BASE_NAME" :: $JOB_BASE_NAME
+echo "BUILD_TAG" :: $BUILD_TAG
+echo "EXECUTOR_NUMBER" :: $EXECUTOR_NUMBER
+echo "NODE_NAME" :: $NODE_NAME
+echo "NODE_LABELS" :: $NODE_LABELS
+echo "WORKSPACE" :: $WORKSPACE
+echo "JENKINS_HOME" :: $JENKINS_HOME
+echo "JENKINS_URL" :: $JENKINS_URL
+echo "BUILD_URL" ::$BUILD_URL
+echo "JOB_URL" :: $JOB_URL'''
+}
+
+
+node('build-server') {
+  
+  stage ('clone the repo')
+  git credentialsId: 'bitibucket-credentials', url: 'https://anilnewyork16@bitbucket.org/anilnewyork16/dotnet.git'
+  
+   //stage('sonar analysis')
+   //sh 'sudo mvn sonar:sonar -Dsonar.projectKey=valuepoint -Dsonar.host.url=http://20.96.193.171:9000 -Dsonar.login=82768d075f98e9148898bf1fa769bef4ab6499f2'
+  
+ // stage ('zip the reports') 
+ // sh 'sudo zip -r site-anil$BUILD_NUMBER.zip target/site*'
+  
+ //stage('upload to nexus')
+ // sh 'sudo curl -v -u admin:admin123 --upload-file site-anil$BUILD_NUMBER.zip http://20.96.193.171:8081/repository/maven-releases/site-anil$BUILD_NUMBER.zip'
+  
+  stage('build docker image')
+  sh 'sudo docker build -t anilbidari/dotnet-mct:$BUILD_NUMBER .'
+
+stage('deploy container')
+ sh 'sudo docker run -d -p 8080 anilbidari/dotnet-mct:$BUILD_NUMBER'
+
+stage (' list the port details')
+sh 'sudo docker ps -l'
+
+stage('docker login')
+sh 'sudo docker login -u anilbidari -p $password'
+  
+ 
+stage('upload image to dockerhub ')
+sh 'sudo docker push anilbidari/dotnet-mct:$BUILD_NUMBER'
+
+stage ('sleep 1 min')
+  sleep 60
+
+  stage('deploy todoapp containers')
+  sh 'sudo kubectl create deployment dotnet-$BUILD_NUMBER --image=anilbidari/dotnet-mct:$BUILD_NUMBER --port=8080'
+  
+  stage('deploy app behind load balancer')
+  sh 'sudo  kubectl expose deployment dotnet-$BUILD_NUMBER  --type="LoadBalancer"'
+  
+  stage ('scale app to min 3 and max 10')
+  sh 'sudo kubectl autoscale deployment dotnet-$BUILD_NUMBER --cpu-percent=50 --min=3 --max=10'
+  
+  stage ('get deployments')
+  sh 'sudo kubectl get deployment dotnet-$BUILD_NUMBER'
+  
+  stage ('sleep 30 sec')
+  sleep 30
+  
+  stage ('get load-balancerip')
+  sh 'sudo kubectl get svc dotnet-$BUILD_NUMBER'
+}
+  
+}
